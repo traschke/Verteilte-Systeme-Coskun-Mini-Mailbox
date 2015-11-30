@@ -1,5 +1,7 @@
 package de.bht.vs.minimailbox.json;
 
+import com.google.gson.Gson;
+
 /**
  * Created by Timo on 30.11.2015.
  */
@@ -23,6 +25,18 @@ public class Response {
     }
 
     public String[] getResponse() {
+        return response;
+    }
+
+    public String toJson() {
+        Gson gson = new Gson();
+        String json = gson.toJson(this);
+        return json;
+    }
+
+    public static Response fromJson(String json) {
+        Gson gson = new Gson();
+        Response response = gson.fromJson(json, Response.class);
         return response;
     }
 }
