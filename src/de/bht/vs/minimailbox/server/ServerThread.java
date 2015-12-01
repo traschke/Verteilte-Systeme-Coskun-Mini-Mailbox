@@ -1,9 +1,8 @@
 package de.bht.vs.minimailbox.server;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import de.bht.vs.minimailbox.json.Request;
+
+import java.io.*;
 import java.net.Socket;
 import java.util.logging.Logger;
 
@@ -14,30 +13,27 @@ public class ServerThread extends Thread {
 
     private final static Logger LOGGER = Logger.getLogger(ServerThread.class.getName());
     private Socket socket;
-    private DataOutputStream out;
-    private DataInput in;
+    private PrintWriter out;
+    private BufferedReader in;
 
     public ServerThread(Socket socket) throws IOException {
-        this.socket = socket;LOGGER.info("Client " + this.socket.getInetAddress().toString() + " connected!");
-        this.out = new DataOutputStream(this.socket.getOutputStream());
-        this.in = new DataInputStream(this.socket.getInputStream());
-    }
-
-    private void parseJson() {
-
+        this.socket = socket;
+        LOGGER.info("Client " + this.socket.getInetAddress().toString() + " connected!");
+        this.out = new PrintWriter(this.socket.getOutputStream(), true);
+        this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
     }
 
     @Override
     public void run() {
-        while(!isInterrupted()) {
-            String inputline;
-            try {
-                while ((inputline = in.readLine()) != null) {
-                    LOGGER.info("New data received: " + inputline);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        String inputline;
+        try {
+            while ((inputline = in.readLine()) != null) {
+                LOGGER.info("New data received: " + inputline);
+                Request request = Request.fromJson(inputline);
+                // TODO Handle Request here...
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -13,8 +13,8 @@ public class Client {
 
     private static String input;
     private static String jsonRequest;
-    private static DataOutputStream out;
-    private static DataInputStream in;
+    private static PrintWriter out;
+    private static BufferedReader in;
     private static Request request;
     private static int rndSequence;
 
@@ -24,8 +24,8 @@ public class Client {
             args[1] = "8090";
         }
         Socket socket = new Socket(args[0], Integer.parseInt(args[1]));
-        out = new DataOutputStream(socket.getOutputStream());
-        in = new DataInputStream(socket.getInputStream());
+        out = new PrintWriter(socket.getOutputStream(), true);
+        in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
         System.out.print("$>");
         while ((input = stdIn.readLine()) != null) {
@@ -73,7 +73,7 @@ public class Client {
     public static void login() throws IOException {
         System.out.println("Logging in...");
         request = new Request(rndSequence, input.split(" ")[0], new String[]{input.split(" ")[1]});
-        out.writeUTF(request.toJson());
+        out.println(request.toJson());
         //System.out.println("Login successful.");
         return;
     }
