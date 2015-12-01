@@ -11,46 +11,64 @@ import java.util.logging.Logger;
  * Created by Timo on 30.11.2015.
  */
 public class Server {
+    private static Server instance;
     private final static Logger LOGGER = Logger.getLogger(Server.class.getName());
-    private static int STANDARD_PORT = 8090;
-    private static int MAX_CLIENTS = 5;
+    private final static int STANDARD_PORT = 8090;
+    public final static int MAX_CLIENTS = 5;
+    private int port;
     private ServerSocket serverSocket;
-    private int connectedClients = 0;
     private List<ServerThread> serverThreads;
     private List<User> users;
+    private boolean stopServer = false;
 
-    public Server() throws IOException {
+    private Server() {
         this(STANDARD_PORT);
     }
 
-    public Server(int port) throws IOException {
-        this.serverSocket = new ServerSocket(port);
+    private Server(int port) {
+        this.port = port;
         this.serverThreads = new ArrayList<>();
         this.users = new ArrayList<>();
+        instance = this;
     }
 
-    public void run() throws IOException {
-        LOGGER.info("Wating for clients...");
-        while(connectedClients < MAX_CLIENTS) {
+    public static Server getInstance() {
+        if (instance == null) {
+            instance = new Server();
+        }
+        return instance;
+    }
+
+    /*public static Server getInstance(int port) throws IOException {
+        if (instance == null) {
+            instance = new Server(port);
+        }
+        return instance;
+    }*/
+
+    private void run() throws IOException {
+        this.serverSocket = new ServerSocket(this.port);
+        LOGGER.info("Waiting for clients...");
+        while(!stopServer) {
             Socket socket = serverSocket.accept();
-            connectedClients++;
-            LOGGER.info(connectedClients + " of max. " + MAX_CLIENTS + " connected.");
             ServerThread serverThread = new ServerThread(socket);
-            serverThread.addClientListener(new ClientListener() {
-                @Override
-                public void userLoggedIn(ClientEvent e) {
-                    Server.this.users.add(e.getUser());
-                    LOGGER.info("User " + e.getUser().getUsername() + " logged in!");
-                }
-            });
             this.serverThreads.add(serverThread);
             serverThread.start();
         }
     }
 
-    public void stop() throws IOException {
+    private void stop() throws IOException {
         LOGGER.info("Server shutting down...");
+        stopServer = true;
         serverSocket.close();
+    }
+
+    public List<ServerThread> getServerThreads() {
+        return serverThreads;
+    }
+
+    public List<User> getUsers() {
+        return users;
     }
 
     public static void main(String[] args) throws IOException {

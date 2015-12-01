@@ -1,5 +1,6 @@
 package de.bht.vs.minimailbox.server;
 
+import java.net.InetAddress;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -9,40 +10,18 @@ import java.util.Date;
 public class User {
 
     private String username;
-    private Date lastAction;
-    private int timeoutInSecs;
+    private InetAddress inetAddress;
 
-    public User(String username, int timeoutInSecs) {
+    public User(String username, InetAddress inetAddress) {
         this.username = username;
-        this.action();
-        this.timeoutInSecs = timeoutInSecs;
-    }
-
-    public void action() {
-        this.lastAction = new Date();
-    }
-
-    public boolean isStillAlive() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(this.lastAction);
-        c.add(Calendar.SECOND, this.timeoutInSecs);
-        Date dateTimeout = c.getTime();
-        Date now = new Date();
-        if (now.getTime() > dateTimeout.getTime()) {
-            return false;
-        }
-        return true;
+        this.inetAddress = inetAddress;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public Date getLastAction() {
-        return lastAction;
-    }
-
-    public int getTimeoutInSecs() {
-        return timeoutInSecs;
+    public InetAddress getInetAddress() {
+        return inetAddress;
     }
 }
