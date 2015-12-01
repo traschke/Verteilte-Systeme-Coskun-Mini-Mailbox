@@ -4,6 +4,7 @@ import de.bht.vs.minimailbox.json.Request;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Calendar;
 
 /**
  * Created by Khaled on 30.11.2015.
@@ -32,20 +33,24 @@ public class Client {
                 hilfe();
                 System.out.println("\n\n$>");
             }
-            if (input.equals("login")) {
+            if (input.startsWith("login")) {
                 login();
                 break;
             }
             if (input.equals("time")) {
+                time();
                 break;
             }
-            if (input.equals("ls")) {
+            if (input.startsWith("ls")) {
+                listDataInPath();
                 break;
             }
             if (input.equals("who")) {
+                listUsersInChat();
                 break;
             }
-            if (input.equals("msg")) {
+            if (input.startsWith("msg")) {
+                sendMsgAt();
                 break;
             }
             if (input.equals("exit")) {
@@ -66,21 +71,29 @@ public class Client {
     }
 
     public static void login() throws IOException {
-        // System.out.println("Logging in at: ");
+        System.out.println("Logging in...");
         request = new Request(rndSequence, input.split(" ")[0], new String[]{input.split(" ")[1]});
         out.writeUTF(request.toJson());
-        System.out.println("Login successful.");
+        //System.out.println("Login successful.");
         return;
     }
 
     public static void time() {
-        System.out.println("Logging in at: ");
-        if (input.startsWith("login")) {
-            input = input.split(" ")[1];
-            //out.writeUTF();
-            // System.out.println("Login failed.");
-            return;
-        }
-        System.out.println("Login successful.");
+        // out.writeUTF();
+        System.out.println("Time: " + Calendar.getInstance().getTimeInMillis());
+        return;
     }
+
+    private static void listDataInPath() {
+
+    }
+
+    private static void listUsersInChat() {
+
+    }
+
+    private static void sendMsgAt() {
+
+    }
+
 }
