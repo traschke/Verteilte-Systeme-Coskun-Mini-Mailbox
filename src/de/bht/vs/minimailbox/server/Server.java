@@ -1,8 +1,5 @@
 package de.bht.vs.minimailbox.server;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,6 +17,7 @@ public class Server {
     private ServerSocket serverSocket;
     private int connectedClients = 0;
     private List<ServerThread> serverThreads;
+    private List<User> users;
 
     public Server() throws IOException {
         this(STANDARD_PORT);
@@ -27,7 +25,8 @@ public class Server {
 
     public Server(int port) throws IOException {
         this.serverSocket = new ServerSocket(port);
-        this.serverThreads = new ArrayList<ServerThread>();
+        this.serverThreads = new ArrayList<>();
+        this.users = new ArrayList<>();
     }
 
     public void run() throws IOException {
@@ -37,6 +36,13 @@ public class Server {
             connectedClients++;
             LOGGER.info(connectedClients + " of max. " + MAX_CLIENTS + " connected.");
             ServerThread serverThread = new ServerThread(socket);
+            serverThread.addClientListener(new ClientListener() {
+                @Override
+                public void userLoggedIn(ClientEvent e) {
+                    Server.this.users.add(e.getUser());
+                    LOGGER.info("User " + e.getUser().getUsername() + " logged in!");
+                }
+            });
             this.serverThreads.add(serverThread);
             serverThread.start();
         }
