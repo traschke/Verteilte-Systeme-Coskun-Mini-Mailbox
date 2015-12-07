@@ -24,4 +24,23 @@ public class User {
     public InetAddress getInetAddress() {
         return inetAddress;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        User user = (User) o;
+
+        if (username != null ? !username.equals(user.username) : user.username != null) return false;
+        return !(inetAddress != null ? !inetAddress.equals(user.inetAddress) : user.inetAddress != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = username != null ? username.hashCode() : 0;
+        result = 31 * result + (inetAddress != null ? inetAddress.hashCode() : 0);
+        return result;
+    }
 }

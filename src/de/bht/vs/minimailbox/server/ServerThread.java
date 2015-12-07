@@ -43,11 +43,13 @@ public class ServerThread extends Thread {
         }
     }
 
+
+
     @Override
     public void run() {
         String inputline;
         try {
-            while ((inputline = in.readLine()) != null && !isInterrupted()) {
+            while ((inputline = in.readLine()) != null && !Thread.currentThread().isInterrupted()) {
                 LOGGER.info("Request received: " + inputline);
                 Request request = Request.fromJson(inputline);
                 handleRequest(request);
@@ -62,17 +64,22 @@ public class ServerThread extends Thread {
         if (!isLoggedIn()) {
             if (request.getCommand().equals("login")) {
                 if (Server.getInstance().getUsers().size() < Server.MAX_CLIENTS) {
-                    this.user = new User(request.getParams()[0], this.socket.getInetAddress());
-                    Server.getInstance().getUsers().add(this.user);
-                    LOGGER.info("[" + Server.getInstance().getUsers().size() + "/" + Server.MAX_CLIENTS + "] User \"" +
-                            this.user.getUsername() + "\" from \"" + this.user.getInetAddress().toString() +
-                            "\" logged in!");
-                    sendResponse(sequence, 200, "hi");
+                    final String username = request.getParams()[0];
+                    if (!usernameAlreadyTaken(username)) {
+                        this.user = new User(username, this.socket.getInetAddress());
+                        Server.getInstance().getUsers().add(this.user);
+                        LOGGER.info("[" + Server.getInstance().getUsers().size() + "/" + Server.MAX_CLIENTS + "] User \"" +
+                                this.user.getUsername() + "\" from \"" + this.user.getInetAddress().toString() +
+                                "\" logged in!");
+                        sendLoginSuccessful(sequence);
+                    } else {
+                        sendUsernameAlreadyTaken(sequence);
+                    }
                 } else {
-                    sendResponse(sequence, 503, "max clients reached", String.valueOf(Server.MAX_CLIENTS));
+                    sendMaxClientsReached(sequence);
                 }
             } else {
-                sendResponse(sequence, 401, "unauthorized");
+                sendUnauthorized(sequence);
             }
         } else if (isLoggedIn()) {
             switch (request.getCommand()) {
@@ -90,18 +97,81 @@ public class ServerThread extends Thread {
                     sendExit(sequence);
                     break;
                 case "login":
-                    sendResponse(sequence, 400, "already logged in");
+                    sendAlreadyLoggedIn(sequence);
                     break;
                 default:
-                    sendResponse(sequence, 501, "not implemented");
+                    sendNotImplemented(sequence);
                     break;
             }
         }
     }
 
+    public void sendMsg(int sequence, String username) {
+        User user = findUserByName(username);
+        if (user != null) {
+            ServerThread thread = findThreadByUser(user);
+            //TODO MSG!!
+            //thread.sendMsg(sequence);
+        } else {
+
+        }
+    }
+
+    private User findUserByName(String username) {
+        for(User user : Server.getInstance().getUsers()) {
+            if (user.getUsername().equals(username)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    private ServerThread findThreadByUser(User user) {
+        for(ServerThread thread : Server.getInstance().getServerThreads()) {
+            if (thread.getUser().equals(user)) {
+                return thread;
+            }
+        }
+        return null;
+    }
+
+    private void sendUsernameAlreadyTaken(int sequence) {
+        sendResponse(sequence, 400, "username already taken");
+    }
+
+    private boolean usernameAlreadyTaken(String username) {
+        Server.getInstance().getUsers();
+        for (User user : Server.getInstance().getUsers()) {
+            if (user.getUsername().equals(username)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void sendLoginSuccessful(int sequence) {
+        sendResponse(sequence, 200, "hi");
+    }
+
+    private void sendMaxClientsReached(int sequence) {
+        sendResponse(sequence, 503, "max clients reached", String.valueOf(Server.MAX_CLIENTS));
+    }
+
+    private void sendUnauthorized(int sequence) {
+        sendResponse(sequence, 401, "unauthorized");
+    }
+
+    private void sendNotImplemented(int sequence) {
+        sendResponse(sequence, 501, "not implemented");
+    }
+
+    private void sendAlreadyLoggedIn(int sequence) {
+        sendResponse(sequence, 400, "already logged in");
+    }
+
     private void sendExit(int sequence) {
         sendResponse(sequence, 204, "byebye");
-        interrupt();
+        Thread.currentThread().interrupt();
         Server.getInstance().getUsers().remove(this.user);
         Server.getInstance().getServerThreads().remove(this);
     }
@@ -127,5 +197,9 @@ public class ServerThread extends Thread {
 
     private boolean isLoggedIn() {
         return this.user != null;
+    }
+
+    public User getUser() {
+        return user;
     }
 }

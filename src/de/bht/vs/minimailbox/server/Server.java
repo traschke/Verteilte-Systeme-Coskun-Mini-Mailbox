@@ -39,13 +39,6 @@ public class Server {
         return instance;
     }
 
-    /*public static Server getInstance(int port) throws IOException {
-        if (instance == null) {
-            instance = new Server(port);
-        }
-        return instance;
-    }*/
-
     private void run() throws IOException {
         this.serverSocket = new ServerSocket(this.port);
         LOGGER.info("Waiting for clients...");
