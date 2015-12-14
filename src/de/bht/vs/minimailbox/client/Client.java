@@ -32,6 +32,7 @@ public class Client {
         hilfe();
         System.out.println("\n");
         System.out.print("$>");
+
         new Thread(() -> {
             readConsole(stdIn);
         }).start();
@@ -42,13 +43,18 @@ public class Client {
     }
 
     private static void getResponse() {
-        Response response = null;
+        Response response;
         try {
             while (true) {
                 response = Response.fromJson(in.readLine());
-                System.out.println(response.toJson() + "\n\n$>");
+                for (int i = 0; i < response.getResponse().length; i++) {
+                    System.out.print(response.getResponse()[i] + "\t\t");
+                }
+                System.out.println("\n");
+                System.out.print("$>");
             }
         } catch (IOException e) {
+            System.out.println("Lost connection to Server!");
             e.printStackTrace();
         }
     }
@@ -119,7 +125,7 @@ public class Client {
     }
 
     private static void sendMsgAt() {
-        request = new Request(rndSequence, input.split(" ")[0], new String[]{input.split(" ")[1], input.split(" ")[2]});
+        request = new Request(rndSequence, input.split(" ")[0], new String[]{input.split(" ")[1], input.substring(input.split(" ")[0].length() + input.split(" ")[1].length() + 2)});
         out.println(request.toJson());
         return;
     }
