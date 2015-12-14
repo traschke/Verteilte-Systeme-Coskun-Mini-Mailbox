@@ -48,7 +48,7 @@ public class Client {
             while (true) {
                 response = Response.fromJson(in.readLine());
                 for (int i = 0; i < response.getResponse().length; i++) {
-                    System.out.print(response.getResponse()[i] + "\t\t");
+                    System.out.print(response.getResponse()[i] + "\t");
                 }
                 System.out.println("\n");
                 System.out.print("$>");
@@ -113,7 +113,11 @@ public class Client {
     }
 
     private static void listDataInPath() {
-        request = new Request(rndSequence, input.split(" ")[0], new String[]{input.split(" ")[1]});
+        String command = input.split(" ")[0];
+        if (input.split(" ")[1] == null)
+            return;
+        String[] params = new String[]{input.split(" ")[1]};
+        request = new Request(rndSequence, command, params);
         out.println(request.toJson());
         return;
     }
