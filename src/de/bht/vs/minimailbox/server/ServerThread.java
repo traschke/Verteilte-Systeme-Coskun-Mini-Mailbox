@@ -24,9 +24,10 @@ public class ServerThread extends Thread {
 
     public ServerThread(Socket socket) throws IOException {
         this.socket = socket;
-        LOGGER.info("Client " + this.socket.getInetAddress().toString() + " connected!");
         this.out = new PrintWriter(this.socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+        LOGGER.info("Client " + this.socket.getInetAddress().toString() + " connected!");
+        sendResponse(100, 200, "Welcome to Mini Mailbox Server. Please log in.");
     }
 
     public void addClientListener(ClientListener clientListener) {
@@ -43,23 +44,26 @@ public class ServerThread extends Thread {
         }
     }
 
-
-
     @Override
     public void run() {
         String inputline;
         try {
             while ((inputline = in.readLine()) != null && !Thread.currentThread().isInterrupted()) {
-                LOGGER.info("Request received: " + inputline);
                 Request request = Request.fromJson(inputline);
                 handleRequest(request);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logout();
         }
     }
 
     private void handleRequest(Request request) {
+        if (isLoggedIn()) {
+            LOGGER.info("Request from \"" + this.user.getUsername() + "\" received: " + request.toJson());
+        } else {
+            LOGGER.info("Request from unregistered Client " + this.socket.getInetAddress().toString() + " received: " + request.toJson());
+        }
+
         int sequence = request.getSequence();
         if (!isLoggedIn()) {
             if (request.getCommand().equals("login")) {
@@ -87,11 +91,13 @@ public class ServerThread extends Thread {
                     sendTime(sequence);
                     break;
                 case "ls":
+                    sendLs(sequence, request.getParams()[0]);
                     break;
                 case "who":
                     sendWho(sequence);
                     break;
                 case "msg":
+                    sendMessage(sequence, request.getParams()[0], request.getParams()[1]);
                     break;
                 case "exit":
                     sendExit(sequence);
@@ -106,15 +112,37 @@ public class ServerThread extends Thread {
         }
     }
 
-    public void sendMsg(int sequence, String username) {
+    private void sendLs(int sequence, String dir) {
+        File file = new File(dir);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                String[] ls = file.list();
+                sendResponse(sequence, 200, ls);
+            } else {
+                sendResponse(sequence, 404, "is not a directory");
+            }
+        } else {
+           sendResponse(sequence, 404, "directory not found");
+        }
+    }
+
+    private void sendMessage(int sequence, String username, String message) {
         User user = findUserByName(username);
         if (user != null) {
-            ServerThread thread = findThreadByUser(user);
-            //TODO MSG!!
-            //thread.sendMsg(sequence);
+            ServerThread serverThread = findThreadByUser(user);
+            if (serverThread != null) {
+                serverThread.sendMsg(sequence, this.user.getUsername(), message);
+                sendResponse(sequence, 204);
+            } else {
+                sendResponse(sequence, 404, "User not found");
+            }
         } else {
-
+            sendResponse(sequence, 404, "User not found");
         }
+    }
+
+    public void sendMsg(int sequence, String user, String message) {
+        sendResponse(sequence, 200, user, message);
     }
 
     private User findUserByName(String username) {
@@ -171,9 +199,14 @@ public class ServerThread extends Thread {
 
     private void sendExit(int sequence) {
         sendResponse(sequence, 204, "byebye");
+        logout();
+    }
+
+    private void logout() {
         Thread.currentThread().interrupt();
         Server.getInstance().getUsers().remove(this.user);
         Server.getInstance().getServerThreads().remove(this);
+        LOGGER.info("User logged out.");
     }
 
     private void sendWho(int sequence) {
@@ -191,7 +224,11 @@ public class ServerThread extends Thread {
 
     private void sendResponse(int sequence, int statuscode, String... response) {
         Response responseObj = new Response(response, statuscode, sequence);
-        LOGGER.info("Sending response to \"" + this.user.getUsername() + "\": " + responseObj.toJson());
+        if (isLoggedIn()) {
+            LOGGER.info("Sending response to \"" + this.user.getUsername() + "\": " + responseObj.toJson());
+        } else {
+            LOGGER.info("Sending response to unregistered user: " + responseObj.toJson());
+        }
         out.println(responseObj.toJson());
     }
 
