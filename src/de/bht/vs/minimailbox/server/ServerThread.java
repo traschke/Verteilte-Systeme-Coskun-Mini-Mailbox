@@ -20,28 +20,12 @@ public class ServerThread extends Thread {
     private BufferedReader in;
     private User user;
 
-    private EventListenerList clientListeners = new EventListenerList();
-
     public ServerThread(Socket socket) throws IOException {
         this.socket = socket;
         this.out = new PrintWriter(this.socket.getOutputStream(), true);
         this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
         LOGGER.info("Client " + this.socket.getInetAddress().toString() + " connected!");
         sendResponse(100, 200, "Welcome to Mini Mailbox Server. Please log in.");
-    }
-
-    public void addClientListener(ClientListener clientListener) {
-        this.clientListeners.add(ClientListener.class, clientListener);
-    }
-
-    public void removeClientListener(ClientListener clientListener) {
-        this.clientListeners.remove(ClientListener.class, clientListener);
-    }
-
-    private synchronized void notifyClientConnected(ClientEvent clientEvent) {
-        for (ClientListener clientListener : this.clientListeners.getListeners(ClientListener.class)) {
-            clientListener.userLoggedIn(clientEvent);
-        }
     }
 
     @Override
