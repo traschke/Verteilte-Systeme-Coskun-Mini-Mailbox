@@ -1,5 +1,9 @@
 package de.bht.vs.minimailbox.server;
 
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.servlet.WebSocketServlet;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,7 +21,7 @@ public class Server {
     public final static int MAX_CLIENTS = 5;
     private int port;
     private ServerSocket serverSocket;
-    private List<ServerThread> serverThreads;
+    private List<IMailboxServer> serverThreads;
     private List<User> users;
     private boolean stopServer = false;
 
@@ -39,8 +43,9 @@ public class Server {
         return instance;
     }
 
-    private void run() throws IOException {
+    private void run() throws Exception {
         this.serverSocket = new ServerSocket(this.port);
+        runJetty();
         LOGGER.info("Waiting for clients...");
         while(!stopServer) {
             Socket socket = serverSocket.accept();
@@ -50,13 +55,27 @@ public class Server {
         }
     }
 
+    private void runJetty() throws Exception {
+        org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server(8080);
+        ServletContextHandler ctx = new ServletContextHandler();
+        ctx.setContextPath("/");
+        ctx.addServlet(MinimailboxSocketServlet.class, "/mailbox");
+
+        server.setHandler(ctx);
+        server.start();
+        //server.join();
+        //while(!stopServer) {
+
+        //}
+    }
+
     private void stop() throws IOException {
         LOGGER.info("Server shutting down...");
         stopServer = true;
         serverSocket.close();
     }
 
-    public List<ServerThread> getServerThreads() {
+    public List<IMailboxServer> getServerThreads() {
         return serverThreads;
     }
 
@@ -64,7 +83,17 @@ public class Server {
         return users;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         new Server().run();
+    }
+
+
+
+    public static class MinimailboxSocketServlet extends WebSocketServlet {
+
+        @Override
+        public void configure(WebSocketServletFactory factory) {
+            factory.register(MailboxWebsocketHandler.class);
+        }
     }
 }

@@ -10,9 +10,9 @@ import java.util.Date;
 public class User {
 
     private String username;
-    private InetAddress inetAddress;
+    private String inetAddress;
 
-    public User(String username, InetAddress inetAddress) {
+    public User(String username, String inetAddress) {
         this.username = username;
         this.inetAddress = inetAddress;
     }
@@ -21,7 +21,7 @@ public class User {
         return username;
     }
 
-    public InetAddress getInetAddress() {
+    public String getInetAddress() {
         return inetAddress;
     }
 
